@@ -163,6 +163,10 @@ class SlidingUpPanel extends StatefulWidget {
   /// by default the Panel is open and must be swiped closed by the user.
   final PanelState defaultPanelState;
 
+  /// Defines whether the SlidingUpPanel is visible after being created.
+  /// Defaults to true.
+  final bool defaultVisibility;
+
   SlidingUpPanel({
     Key key,
     this.panel,
@@ -198,6 +202,7 @@ class SlidingUpPanel extends StatefulWidget {
     this.isDraggable = true,
     this.slideDirection = SlideDirection.UP,
     this.defaultPanelState = PanelState.CLOSED,
+    this.defaultVisibility = true,
     this.header,
     this.footer
   }) : assert(panel != null || panelBuilder != null),
@@ -217,11 +222,12 @@ class _SlidingUpPanelState extends State<SlidingUpPanel> with SingleTickerProvid
   bool _scrollingEnabled = false;
   VelocityTracker _vt = new VelocityTracker();
 
-  bool _isPanelVisible = true;
+  bool _isPanelVisible;
 
   @override
   void initState(){
     super.initState();
+    _isPanelVisible = widget.defaultVisibility;
 
     _ac = new AnimationController(
       vsync: this,
