@@ -563,6 +563,13 @@ class _SlidingUpPanelState extends State<SlidingUpPanel> with SingleTickerProvid
     });
   }
 
+  //shows the panel (with preserving the original state)
+  void _showPreserve(){
+    setState(() {
+      _isPanelVisible = true;
+    });
+  }
+
   //animate the panel position to value - must
   //be between 0.0 and 1.0
   Future<void> _animatePanelToPosition(double value, {Duration duration, Curve curve = Curves.linear}){
@@ -650,6 +657,12 @@ class PanelController{
   Future<void> show(){
     assert(isAttached, "PanelController must be attached to a SlidingUpPanel");
     return _panelState._show();
+  }
+
+  /// Makes the sliding panel visible while preserving its original state.
+  void showPreserve(){
+    assert(isAttached, "PanelController must be attached to a SlidingUpPanel");
+    _panelState._showPreserve();
   }
 
   /// Animates the panel position to the value.
