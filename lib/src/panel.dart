@@ -289,10 +289,23 @@ class _SlidingUpPanelState extends State<SlidingUpPanel> with SingleTickerProvid
         !widget.backdropEnabled || !_isPanelVisible ? Container() : GestureDetector(
           onVerticalDragEnd: widget.backdropTapClosesPanel ? (DragEndDetails dets){
             // only trigger a close if the drag is towards panel close position
-            if((widget.slideDirection == SlideDirection.UP ? 1 : -1) * dets.velocity.pixelsPerSecond.dy > 0)
-              _close();
+            if((widget.slideDirection == SlideDirection.UP ? 1 : -1) * dets.velocity.pixelsPerSecond.dy > 0) {
+              if (widget.alwaysShowBackdrop) {
+                _hide();
+              } else {
+                _close();
+              }
+            }
           } : null,
-          onTap: widget.backdropTapClosesPanel ? () => _close() : null,
+          onTap: () {
+            if (widget.backdropTapClosesPanel) {
+              if (widget.alwaysShowBackdrop) {
+                _hide();
+              } else {
+                _close();
+              }
+            }
+          },
           child: AnimatedBuilder(
             animation: _ac,
             builder: (context, _) {
