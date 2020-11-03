@@ -167,6 +167,11 @@ class SlidingUpPanel extends StatefulWidget {
   /// Defaults to true.
   final bool defaultVisibility;
 
+  /// If true, the backdrop will be active if the panel is open and if it is
+  /// closed.
+  /// Especially useful for static height panels.
+  final bool alwaysShowBackdrop;
+
   SlidingUpPanel({
     Key key,
     this.panel,
@@ -203,6 +208,7 @@ class SlidingUpPanel extends StatefulWidget {
     this.slideDirection = SlideDirection.UP,
     this.defaultPanelState = PanelState.CLOSED,
     this.defaultVisibility = true,
+    this.alwaysShowBackdrop = false,
     this.header,
     this.footer
   }) : assert(panel != null || panelBuilder != null),
@@ -280,7 +286,7 @@ class _SlidingUpPanelState extends State<SlidingUpPanel> with SingleTickerProvid
 
 
         //the backdrop to overlay on the body
-        !widget.backdropEnabled ? Container() : GestureDetector(
+        !widget.backdropEnabled || !_isPanelVisible ? Container() : GestureDetector(
           onVerticalDragEnd: widget.backdropTapClosesPanel ? (DragEndDetails dets){
             // only trigger a close if the drag is towards panel close position
             if((widget.slideDirection == SlideDirection.UP ? 1 : -1) * dets.velocity.pixelsPerSecond.dy > 0)
@@ -290,6 +296,13 @@ class _SlidingUpPanelState extends State<SlidingUpPanel> with SingleTickerProvid
           child: AnimatedBuilder(
             animation: _ac,
             builder: (context, _) {
+              var color;
+              if (widget.alwaysShowBackdrop) {
+                color = widget.backdropColor.withOpacity(widget.backdropOpacity);
+              } else if (_ac.value != 0.0) {
+                color = widget.backdropColor.withOpacity(widget.backdropOpacity * _ac.value);
+              }
+
               return Container(
                 height: MediaQuery.of(context).size.height,
                 width: MediaQuery.of(context).size.width,
@@ -297,7 +310,7 @@ class _SlidingUpPanelState extends State<SlidingUpPanel> with SingleTickerProvid
                 //set color to null so that touch events pass through
                 //to the body when the panel is closed, otherwise,
                 //if a color exists, then touch events won't go through
-                color: _ac.value == 0.0 ? null : widget.backdropColor.withOpacity(widget.backdropOpacity * _ac.value),
+                color: color,
               );
             }
           ),
