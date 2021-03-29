@@ -6,10 +6,10 @@ Copyright: © 2020, Akshath Jain. All rights reserved.
 Licensing: More information can be found here: https://github.com/akshathjain/sliding_up_panel/blob/master/LICENSE
 */
 
-import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
 import 'dart:math';
 
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 
 enum SlideDirection {
@@ -159,6 +159,15 @@ class SlidingUpPanel extends StatefulWidget {
   /// by default the Panel is open and must be swiped closed by the user.
   final PanelState defaultPanelState;
 
+  /// Defines whether the SlidingUpPanel is visible after being created.
+  /// Defaults to true.
+  final bool defaultVisibility;
+
+  /// If true, the backdrop will be active if the panel is open and if it is
+  /// closed.
+  /// Especially useful for static height panels.
+  final bool alwaysShowBackdrop;
+
   SlidingUpPanel(
       {Key? key,
       this.panel,
@@ -194,6 +203,8 @@ class SlidingUpPanel extends StatefulWidget {
       this.isDraggable = true,
       this.slideDirection = SlideDirection.UP,
       this.defaultPanelState = PanelState.CLOSED,
+      this.defaultVisibility = true,
+      this.alwaysShowBackdrop = false,
       this.header,
       this.footer})
       : assert(panel != null || panelBuilder != null),
@@ -218,6 +229,7 @@ class _SlidingUpPanelState extends State<SlidingUpPanel>
   @override
   void initState() {
     super.initState();
+    _isPanelVisible = widget.defaultVisibility;
 
     _ac = new AnimationController(
         vsync: this,
@@ -272,7 +284,7 @@ class _SlidingUpPanelState extends State<SlidingUpPanel>
             : Container(),
 
         //the backdrop to overlay on the body
-        !widget.backdropEnabled
+        !widget.backdropEnabled || !_isPanelVisible
             ? Container()
             : GestureDetector(
                 onVerticalDragEnd: widget.backdropTapClosesPanel
@@ -282,13 +294,36 @@ class _SlidingUpPanelState extends State<SlidingUpPanel>
                                     ? 1
                                     : -1) *
                                 dets.velocity.pixelsPerSecond.dy >
-                            0) _close();
+                            0) {
+                          if (widget.alwaysShowBackdrop) {
+                            _hide();
+                          } else {
+                            _close();
+                          }
+                        }
                       }
                     : null,
-                onTap: widget.backdropTapClosesPanel ? () => _close() : null,
+                onTap: () {
+                  if (widget.backdropTapClosesPanel) {
+                    if (widget.alwaysShowBackdrop) {
+                      _hide();
+                    } else {
+                      _close();
+                    }
+                  }
+                },
                 child: AnimatedBuilder(
                     animation: _ac,
                     builder: (context, _) {
+                      var color;
+                      if (widget.alwaysShowBackdrop) {
+                        color = widget.backdropColor
+                            .withOpacity(widget.backdropOpacity);
+                      } else if (_ac.value != 0.0) {
+                        color = widget.backdropColor
+                            .withOpacity(widget.backdropOpacity * _ac.value);
+                      }
+
                       return Container(
                         height: MediaQuery.of(context).size.height,
                         width: MediaQuery.of(context).size.width,
@@ -296,10 +331,7 @@ class _SlidingUpPanelState extends State<SlidingUpPanel>
                         //set color to null so that touch events pass through
                         //to the body when the panel is closed, otherwise,
                         //if a color exists, then touch events won't go through
-                        color: _ac.value == 0.0
-                            ? null
-                            : widget.backdropColor.withOpacity(
-                                widget.backdropOpacity * _ac.value),
+                        color: color,
                       );
                     }),
               ),
@@ -600,6 +632,13 @@ class _SlidingUpPanelState extends State<SlidingUpPanel>
     });
   }
 
+  //shows the panel (with preserving the original state)
+  void _showPreserve() {
+    setState(() {
+      _isPanelVisible = true;
+    });
+  }
+
   //animate the panel position to value - must
   //be between 0.0 and 1.0
   Future<void> _animatePanelToPosition(double value,
@@ -681,6 +720,12 @@ class PanelController {
   Future<void> show() {
     assert(isAttached, "PanelController must be attached to a SlidingUpPanel");
     return _panelState!._show();
+  }
+
+  /// Makes the sliding panel visible while preserving its original state.
+  void showPreserve() {
+    assert(isAttached, "PanelController must be attached to a SlidingUpPanel");
+    _panelState!._showPreserve();
   }
 
   /// Animates the panel position to the value.
